@@ -143,5 +143,41 @@ public class PointServiceTest {
         verify(pointHistoryRepository).insert(eq(userId), eq(requestAmount), eq(TransactionType.CHARGE), anyLong());
     }
 
+    @ParameterizedTest
+    @MethodSource("amountAndExpectedProvider")
+    @DisplayName("유효한 포인트 금액만 사용 가능하다")
+    void use_point_pass(long amount, boolean expected){
+        boolean canUse = UserPointValidator.canUse(amount);
+        assertEquals(expected, canUse);
+    }
 
+    static Stream<Arguments> beforeUpdateAmountAndRequestAmountForUseProvider() {
+        return Stream.of(
+            Arguments.of(1000L, 500L),
+            Arguments.of(1000L, 1000L)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("beforeUpdateAmountAndRequestAmountForUseProvider")
+    @DisplayName("특정 유저의 포인트를 사용할 수 있다")
+    void use_pass(long beforeUpdateAmount, long requestAmount){
+        // given - 테스트 데이터 준비, 목업 동작 설정
+        long userId = 1L;
+        long updatedAmount = beforeUpdateAmount - requestAmount;
+
+        // 특정 유저의 포인트 정보 목업 준비
+        UserPoint beforeMockUserPoint = new UserPoint(userId, beforeUpdateAmount, System.currentTimeMillis());
+        UserPoint updatedMockUserPoint = new UserPoint(userId, updatedAmount, System.currentTimeMillis());
+        when(userPointRepository.selectById(userId)).thenReturn(beforeMockUserPoint);
+        when(userPointRepository.insertOrUpdate(userId, updatedAmount)).thenReturn(updatedMockUserPoint);
+
+        // when - 포인트 충전 수행
+        UserPoint userPoint = pointService.use(userId, requestAmount);
+
+        // then - 결과 검증
+        assertNotNull(userPoint);
+        assertEquals(userId, userPoint.id());
+        assertEquals(updatedAmount, userPoint.point());
+    }
 }

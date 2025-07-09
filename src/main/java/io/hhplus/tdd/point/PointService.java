@@ -19,6 +19,7 @@ public class PointService {
         if (!UserPointValidator.canAdd(amount)){
             throw new IllegalArgumentException(ExceptionCode.INVALID_AMOUNT.message());
         }
+
         UserPoint beforeUserPoint = userPointRepository.selectById(id);
         long requestAmount = beforeUserPoint.point() + amount;
 
@@ -28,6 +29,22 @@ public class PointService {
         return updatedUserPoint;
     }
 
+    public UserPoint use(long id, long amount){
+        if (!UserPointValidator.canUse(amount)){
+            throw new IllegalArgumentException(ExceptionCode.INVALID_AMOUNT.message());
+        }
 
+        UserPoint beforeUserPoint = userPointRepository.selectById(id);
+
+        if (beforeUserPoint.point() < amount){
+            throw new IllegalArgumentException(ExceptionCode.INSUFFICIENT_BALANCE.message());
+        }
+
+        long requestAmount = beforeUserPoint.point() - amount;
+        UserPoint updatedUserPoint = userPointRepository.insertOrUpdate(id, requestAmount);
+        pointHistoryRepository.insert(updatedUserPoint.id(), amount, TransactionType.USE, System.currentTimeMillis());
+
+        return updatedUserPoint;
+    }
 
 }
