@@ -1,7 +1,9 @@
 package io.hhplus.tdd;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.hhplus.tdd.exception.ExceptionCode;
 import io.hhplus.tdd.point.model.PointHistory;
 import io.hhplus.tdd.point.model.UserPoint;
 import java.util.List;
@@ -109,11 +111,12 @@ public class PointAcceptanceTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Long> request = new HttpEntity<>(requestAmount, headers);
-        ResponseEntity<UserPoint> chargeResponse = restTemplate
-            .exchange("/point/" + userId + "/charge", HttpMethod.PATCH, request, UserPoint.class);
+        ResponseEntity<String> chargeResponse = restTemplate
+            .exchange("/point/" + userId + "/charge", HttpMethod.PATCH, request, String.class);
 
         // then - 충전 결과 확인
         assertEquals(HttpStatus.BAD_REQUEST, chargeResponse.getStatusCode());
+        assertTrue(chargeResponse.getBody().contains(ExceptionCode.INVALID_AMOUNT.message()));
             // 포인트 조회 api 호출
         ResponseEntity<UserPoint> getResponse = restTemplate
             .getForEntity("/point/" + userId, UserPoint.class);
@@ -165,11 +168,12 @@ public class PointAcceptanceTest {
 
         // when - 포인트 사용 api 호출
         HttpEntity<Long> useRequest = new HttpEntity<>(useAmount, headers);
-        ResponseEntity<UserPoint> useResponse = restTemplate
-            .exchange("/point/" + userId + "/use", HttpMethod.PATCH, useRequest, UserPoint.class);
+        ResponseEntity<String> useResponse = restTemplate
+            .exchange("/point/" + userId + "/use", HttpMethod.PATCH, useRequest, String.class);
 
         // then
         assertEquals(HttpStatus.BAD_REQUEST, useResponse.getStatusCode());
+        assertTrue(useResponse.getBody().contains(ExceptionCode.INVALID_AMOUNT.message()));
         // 포인트 조회 api 호출
         ResponseEntity<UserPoint> getResponse = restTemplate
             .getForEntity("/point/" + userId, UserPoint.class);
