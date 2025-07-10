@@ -2,10 +2,13 @@ package io.hhplus.tdd;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.PointHistory;
 import io.hhplus.tdd.point.PointService;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.UserPoint;
 import io.hhplus.tdd.point.UserPointValidator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +34,44 @@ public class PointServiceTest {
     private PointHistoryTable pointHistoryRepository;
     private PointService pointService;
 
+    private static Stream<Arguments> provideAmountsForValidation() {
+        return Stream.of(
+            Arguments.of(1L, true),
+            Arguments.of(10000L, true),
+            Arguments.of(0L, false),
+            Arguments.of(-100L, false)
+        );
+    }
+
+    private static Stream<Arguments> provideValidChargeCases() {
+        return Stream.of(
+            Arguments.of(500L),
+            Arguments.of(1000L),
+            Arguments.of(100000L)
+        );
+    }
+
+    private static Stream<Arguments> provideInvalidChargeCases() {
+        return Stream.of(
+            Arguments.of(-1000L),
+            Arguments.of(0L)
+        );
+    }
+
+    private static Stream<Arguments> provideValidUseCases() {
+        return Stream.of(
+            Arguments.of(1000L, 500L),
+            Arguments.of(1000L, 1000L)
+        );
+    }
+
+    private static Stream<Arguments> provideInvalidUseCases() {
+        return Stream.of(
+            Arguments.of(-1000L),
+            Arguments.of(0L)
+        );
+    }
+
     @BeforeEach
     void setUp(){
         pointService = new PointService(userPointRepository, pointHistoryRepository);
@@ -52,37 +93,42 @@ public class PointServiceTest {
         assertEquals(userId, userPoint.id());
     }
 
-    static Stream<Arguments> amountAndExpectedProvider() {
-        return Stream.of(
-            Arguments.of(1L, true),
-            Arguments.of(10000L, true),
-            Arguments.of(0L, false),
-            Arguments.of(-100L, false)
+    @Test
+    @DisplayName("특정 유저의 포인트 내역을 조회할 수 있다")
+    void pointHistory() {
+        // given
+        long userId = 1L;
+        List<PointHistory> mockPointHistories = List.of(
+            new PointHistory(1L, userId, 1000L, TransactionType.CHARGE,
+                System.currentTimeMillis()),
+            new PointHistory(2L, userId, 500L, TransactionType.USE,
+                System.currentTimeMillis())
         );
+        when(pointHistoryRepository.selectAllByUserId(userId)).thenReturn(mockPointHistories);
+
+        // when - 포인트 내역 조회 수행
+        List<PointHistory> pointHistories = pointService.pointHistory(userId);
+
+        // then
+        assertNotNull(pointHistories);
+        assertEquals(mockPointHistories.size(), pointHistories.size());
     }
 
     @ParameterizedTest
-    @MethodSource("amountAndExpectedProvider")
+    @MethodSource("provideAmountsForValidation")
     @DisplayName("유효한 포인트 금액만 충전이 가능하다")
     void add_point_pass(long amount, boolean expected){
         boolean canAdd = UserPointValidator.canAdd(amount);
         assertEquals(expected, canAdd);
     }
 
-    static Stream<Arguments> beforeUpdateAmountAndRequestAmountProvider() {
-        return Stream.of(
-            Arguments.of(1000L, 500L),
-            Arguments.of(1000L, 1000L),
-            Arguments.of(0L, 100000L)
-        );
-    }
-
     @ParameterizedTest
-    @MethodSource("beforeUpdateAmountAndRequestAmountProvider")
+    @MethodSource("provideValidChargeCases")
     @DisplayName("특정 유저의 포인트를 충전할 수 있다")
-    void charge_pass(long beforeUpdateAmount, long requestAmount){
+    void charge_pass(long requestAmount){
         // given - 테스트 데이터 준비, 목업 동작 설정
         long userId = 1L;
+        long beforeUpdateAmount = 0L;
         long updatedAmount = beforeUpdateAmount + requestAmount;
 
             // 특정 유저의 포인트 정보 목업 준비
@@ -100,34 +146,27 @@ public class PointServiceTest {
         assertEquals(updatedAmount, userPoint.point());
     }
 
-    static Stream<Arguments> requestAmountProvider() {
-        return Stream.of(
-            Arguments.of(-1000L),
-            Arguments.of(0L)
-        );
-    }
-
     @ParameterizedTest
-    @MethodSource("requestAmountProvider")
+    @MethodSource("provideInvalidChargeCases")
     @DisplayName("특정 유저의 포인트 충전 시 0 이하 금액은 예외가 발생한다")
     void charge_fail(long requestAmount){
         // given - 테스트 데이터 준비
         long userId = 1L;
 
-        // then - 음수 금액 포인트 충전 시도 예외 검증
+        // then - 0 이하 금액 포인트 충전 시도 예외 검증
         assertThrows(IllegalArgumentException.class, () -> pointService.charge(userId, requestAmount));
     }
 
-
     @ParameterizedTest
-    @MethodSource("beforeUpdateAmountAndRequestAmountProvider")
+    @MethodSource("provideValidChargeCases")
     @DisplayName("특정 유저의 포인트 충전 성공 시 포인트 내역이 기록된다")
-    void charge_pass_after_pointHistory_insert_pass(long beforeUpdateAmount, long requestAmount){
+    void charge_pass_after_pointHistory_insert_pass(long requestAmount){
         // given - 테스트 데이터 준비, 목업 동작 설정
         long userId = 1L;
+        long beforeUpdateAmount = 0L;
         long updatedAmount = beforeUpdateAmount + requestAmount;
 
-        // 특정 유저의 포인트 정보 목업 준비
+            // 특정 유저의 포인트 정보 목업 준비
         UserPoint beforeMockUserPoint = new UserPoint(userId, beforeUpdateAmount, System.currentTimeMillis());
         UserPoint updatedMockUserPoint = new UserPoint(userId, updatedAmount, System.currentTimeMillis());
         when(userPointRepository.selectById(userId)).thenReturn(beforeMockUserPoint);
@@ -144,22 +183,15 @@ public class PointServiceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("amountAndExpectedProvider")
+    @MethodSource("provideAmountsForValidation")
     @DisplayName("유효한 포인트 금액만 사용 가능하다")
     void use_point_pass(long amount, boolean expected){
         boolean canUse = UserPointValidator.canUse(amount);
         assertEquals(expected, canUse);
     }
 
-    static Stream<Arguments> beforeUpdateAmountAndRequestAmountForUseProvider() {
-        return Stream.of(
-            Arguments.of(1000L, 500L),
-            Arguments.of(1000L, 1000L)
-        );
-    }
-
     @ParameterizedTest
-    @MethodSource("beforeUpdateAmountAndRequestAmountForUseProvider")
+    @MethodSource("provideValidUseCases")
     @DisplayName("특정 유저의 포인트를 사용할 수 있다")
     void use_pass(long beforeUpdateAmount, long requestAmount){
         // given - 테스트 데이터 준비, 목업 동작 설정
@@ -172,12 +204,47 @@ public class PointServiceTest {
         when(userPointRepository.selectById(userId)).thenReturn(beforeMockUserPoint);
         when(userPointRepository.insertOrUpdate(userId, updatedAmount)).thenReturn(updatedMockUserPoint);
 
-        // when - 포인트 충전 수행
+        // when - 포인트 사용 수행
         UserPoint userPoint = pointService.use(userId, requestAmount);
 
         // then - 결과 검증
         assertNotNull(userPoint);
         assertEquals(userId, userPoint.id());
         assertEquals(updatedAmount, userPoint.point());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidUseCases")
+    @DisplayName("특정 유저의 포인트 사용 시 0 이하 금액은 예외가 발생한다")
+    void use_fail(long requestAmount){
+        // given - 테스트 데이터 준비
+        long userId = 1L;
+
+        // then - 0 이하 금액 포인트 사용 시도 예외 검증
+        assertThrows(IllegalArgumentException.class, () -> pointService.use(userId, requestAmount));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideValidUseCases")
+    @DisplayName("특정 유저의 포인트 사용 성공 시 포인트 내역이 기록된다")
+    void use_pass_after_pointHistory_insert_pass(long beforeUpdateAmount, long requestAmount){
+        // given - 테스트 데이터 준비, 목업 동작 설정
+        long userId = 1L;
+        long updatedAmount = beforeUpdateAmount - requestAmount;
+
+            // 특정 유저의 포인트 정보 목업 준비
+        UserPoint beforeMockUserPoint = new UserPoint(userId, beforeUpdateAmount, System.currentTimeMillis());
+        UserPoint updatedMockUserPoint = new UserPoint(userId, updatedAmount, System.currentTimeMillis());
+        when(userPointRepository.selectById(userId)).thenReturn(beforeMockUserPoint);
+        when(userPointRepository.insertOrUpdate(userId, updatedAmount)).thenReturn(updatedMockUserPoint);
+
+        // when - 포인트 사용 수행
+        UserPoint userPoint = pointService.use(userId, requestAmount);
+
+        // then - 결과 검증
+        assertNotNull(userPoint);
+        assertEquals(userId, userPoint.id());
+        assertEquals(updatedAmount, userPoint.point());
+        verify(pointHistoryRepository).insert(eq(userId), eq(requestAmount), eq(TransactionType.USE), anyLong());
     }
 }
