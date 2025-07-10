@@ -54,7 +54,7 @@ public class PointAcceptanceTest {
     @DisplayName("포인트 내역 조회 요청 시 포인트 내역을 확인 할 수 있다")
     void get_pointHistory_pass(){
         // given
-        long userId = 1L;
+        long userId = 2L;
         long requestAmount = 1000L;
 
         HttpHeaders headers = new HttpHeaders();
@@ -77,7 +77,7 @@ public class PointAcceptanceTest {
     @DisplayName("포인트 충전 후 조회하면 금액이 증가된다")
     void charge_point_pass(){
         // given
-        long userId = 1L;
+        long userId = 3L;
         long requestAmount = 1000L;
 
         // when - 포인트 충전 api 호출
@@ -103,7 +103,7 @@ public class PointAcceptanceTest {
     @DisplayName("유효하지 않은 포인트 금액으로 포인트 충전 시 에러 코드를 받는다")
     void charge_point_fail(){
         // given
-        long userId = 1L;
+        long userId = 4L;
         long requestAmount = -500L;
 
         // when - 포인트 충전 api 호출
@@ -128,7 +128,7 @@ public class PointAcceptanceTest {
     @DisplayName("포인트 사용 후 조회하면 금액이 감소된다")
     void use_point_pass(){
         // given
-        long userId = 1L;
+        long userId = 5L;
         long initialAmount  = 1000L;
         long useAmount  = 1000L;
 
@@ -154,7 +154,7 @@ public class PointAcceptanceTest {
     @DisplayName("유효하지 않은 포인트 금액 사용 시 에러 코드를 받는다")
     void use_point_fail_INVALID_AMOUNT(){
         // given
-        long userId = 1L;
+        long userId = 6L;
         long initialAmount  = 1000L;
         long useAmount  = -500L;
 
@@ -185,7 +185,7 @@ public class PointAcceptanceTest {
     @DisplayName("잔고 부족 상태에서 포인트 사용 시 에러 코드를 받는다")
     void use_point_fail_insufficient_balance(){
         // given
-        long userId = 1L;
+        long userId = 7L;
         long initialAmount  = 500L;
         long useAmount  = 1000L;
 
