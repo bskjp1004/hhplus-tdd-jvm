@@ -1,5 +1,8 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.controller;
 
+import io.hhplus.tdd.point.service.PointService;
+import io.hhplus.tdd.point.model.PointHistory;
+import io.hhplus.tdd.point.model.UserPoint;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +42,7 @@ public class PointController {
      * TODO - 특정 유저의 포인트를 충전하는 기능을 작성해주세요.
      */
     @PatchMapping("{id}/charge")
+    //@PostMapping("{id}/charge")
     public UserPoint charge(
             @PathVariable long id,
             @RequestBody long amount

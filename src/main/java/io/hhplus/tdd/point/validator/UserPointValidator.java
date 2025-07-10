@@ -1,4 +1,4 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.validator;
 
 public class UserPointValidator {
     public static boolean canAdd(long requestAmount){

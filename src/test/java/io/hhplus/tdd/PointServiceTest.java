@@ -2,12 +2,11 @@ package io.hhplus.tdd;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.point.PointHistory;
-import io.hhplus.tdd.point.PointService;
-import io.hhplus.tdd.point.TransactionType;
-import io.hhplus.tdd.point.UserPoint;
-import io.hhplus.tdd.point.UserPointValidator;
-import java.util.ArrayList;
+import io.hhplus.tdd.point.model.PointHistory;
+import io.hhplus.tdd.point.service.PointService;
+import io.hhplus.tdd.point.model.TransactionType;
+import io.hhplus.tdd.point.model.UserPoint;
+import io.hhplus.tdd.point.validator.UserPointValidator;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;

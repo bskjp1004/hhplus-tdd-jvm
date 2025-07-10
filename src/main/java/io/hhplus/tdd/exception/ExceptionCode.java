@@ -1,4 +1,4 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.exception;
 
 public enum ExceptionCode {
     INVALID_AMOUNT("E001", "요청 금액은 1 이상이어야 합니다."),
