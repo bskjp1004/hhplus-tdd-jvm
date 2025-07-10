@@ -25,6 +25,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * 단위 테스트
+ * */
 @ExtendWith(MockitoExtension.class)
 public class PointServiceTest {
     @Mock
