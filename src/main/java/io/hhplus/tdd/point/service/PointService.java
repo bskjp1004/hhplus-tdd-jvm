@@ -24,13 +24,17 @@ public class PointService {
     public List<PointHistory> pointHistory(long userId) { return pointHistoryRepository.selectAllByUserId(userId); }
 
     public UserPoint charge(long id, long amount){
-        if (!UserPointValidator.canAdd(amount)){
+        if (!UserPointValidator.isValidRequestAmount(amount)){
             throw new IllegalArgumentException(ExceptionCode.INVALID_AMOUNT.message());
         }
 
         UserPoint beforeUserPoint = userPointRepository.selectById(id);
-        long requestAmount = beforeUserPoint.point() + amount;
 
+        if (!UserPointValidator.canAdd(beforeUserPoint.point(), amount)){
+            throw new IllegalArgumentException(ExceptionCode.EXCEED_MAX_BALANCE.message());
+        }
+
+        long requestAmount = beforeUserPoint.point() + amount;
         UserPoint updatedUserPoint = userPointRepository.insertOrUpdate(id, requestAmount);
         pointHistoryRepository.insert(updatedUserPoint.id(), amount, TransactionType.CHARGE, System.currentTimeMillis());
 

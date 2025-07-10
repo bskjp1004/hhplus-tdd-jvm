@@ -127,7 +127,7 @@ public class PointServiceTest {
     @MethodSource("provideAmountsForValidation")
     @DisplayName("유효한 포인트 금액만 충전이 가능하다")
     void add_point_pass(long amount, boolean expected){
-        boolean canAdd = UserPointValidator.canAdd(amount);
+        boolean canAdd = UserPointValidator.isValidRequestAmount(amount);
         assertEquals(expected, canAdd);
     }
 
