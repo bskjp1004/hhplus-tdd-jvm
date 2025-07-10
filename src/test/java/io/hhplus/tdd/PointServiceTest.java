@@ -69,6 +69,13 @@ public class PointServiceTest {
 
     private static Stream<Arguments> provideInvalidUseCases() {
         return Stream.of(
+            Arguments.of(1000L, 1500L),
+            Arguments.of(0L, 1000L)
+        );
+    }
+
+    private static Stream<Arguments> provideInvalidPointAmountUseCases() {
+        return Stream.of(
             Arguments.of(-1000L),
             Arguments.of(0L)
         );
@@ -216,13 +223,13 @@ public class PointServiceTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideInvalidUseCases")
+    @MethodSource("provideInvalidPointAmountUseCases")
     @DisplayName("특정 유저의 포인트 사용 시 0 이하 금액은 예외가 발생한다")
     void use_fail(long requestAmount){
         // given - 테스트 데이터 준비
         long userId = 1L;
 
-        // then - 0 이하 금액 포인트 사용 시도 예외 검증
+        // when & then - 0 이하 금액 포인트 사용 시도 예외 검증
         assertThrows(IllegalArgumentException.class, () -> pointService.use(userId, requestAmount));
     }
 
@@ -248,5 +255,20 @@ public class PointServiceTest {
         assertEquals(userId, userPoint.id());
         assertEquals(updatedAmount, userPoint.point());
         verify(pointHistoryRepository).insert(eq(userId), eq(requestAmount), eq(TransactionType.USE), anyLong());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideInvalidUseCases")
+    @DisplayName("특정 유저의 포인트 사용 시 잔고 부족이면 사용 실패한다")
+    void use_fail_insufficient_balance(long beforeUpdateAmount, long requestAmount){
+        // given - 테스트 데이터 준비, 목업 동작 설정
+        long userId = 1L;
+
+            // 특정 유저의 포인트 정보 목업 준비
+        UserPoint beforeMockUserPoint = new UserPoint(userId, beforeUpdateAmount, System.currentTimeMillis());
+        when(userPointRepository.selectById(userId)).thenReturn(beforeMockUserPoint);
+
+        // when & then - 포인트 사용 수행 후 잔고 부족 에러 검증
+        assertThrows(IllegalArgumentException.class, () -> pointService.use(userId, requestAmount));
     }
 }
