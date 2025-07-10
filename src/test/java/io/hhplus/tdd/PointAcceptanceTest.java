@@ -152,7 +152,7 @@ public class PointAcceptanceTest {
 
     @Test
     @DisplayName("유효하지 않은 포인트 금액 사용 시 에러 코드를 받는다")
-    void use_point_fail(){
+    void use_point_fail_INVALID_AMOUNT(){
         // given
         long userId = 1L;
         long initialAmount  = 1000L;
@@ -174,6 +174,37 @@ public class PointAcceptanceTest {
         // then
         assertEquals(HttpStatus.BAD_REQUEST, useResponse.getStatusCode());
         assertTrue(useResponse.getBody().contains(ExceptionCode.INVALID_AMOUNT.message()));
+        // 포인트 조회 api 호출
+        ResponseEntity<UserPoint> getResponse = restTemplate
+            .getForEntity("/point/" + userId, UserPoint.class);
+
+        assertEquals(initialAmount, getResponse.getBody().point());
+    }
+
+    @Test
+    @DisplayName("잔고 부족 상태에서 포인트 사용 시 에러 코드를 받는다")
+    void use_point_fail_insufficient_balance(){
+        // given
+        long userId = 1L;
+        long initialAmount  = 500L;
+        long useAmount  = 1000L;
+
+        // 포인트 사용 전 충전 api 호출
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Long> chargeRequest = new HttpEntity<>(initialAmount, headers);
+        ResponseEntity<UserPoint> chargeResponse = restTemplate
+            .exchange("/point/" + userId + "/charge", HttpMethod.PATCH, chargeRequest, UserPoint.class);
+
+        // when - 포인트 사용 api 호출
+        HttpEntity<Long> useRequest = new HttpEntity<>(useAmount, headers);
+        ResponseEntity<String> useResponse = restTemplate
+            .exchange("/point/" + userId + "/use", HttpMethod.PATCH, useRequest, String.class);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, useResponse.getStatusCode());
+        assertTrue(useResponse.getBody().contains(ExceptionCode.INSUFFICIENT_BALANCE.message()));
         // 포인트 조회 api 호출
         ResponseEntity<UserPoint> getResponse = restTemplate
             .getForEntity("/point/" + userId, UserPoint.class);
