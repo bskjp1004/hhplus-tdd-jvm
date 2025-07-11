@@ -17,7 +17,7 @@
 | GET    | `/point/{id}`           | 특정 유저의 포인트 조회    | 없음                       | `200 OK` `{ "id": 1, "point": 1500 }`|
 | GET    | `/point/{id}/histories` | 특정 유저의 포인트 내역 조회 | 없음                       | `200 OK` 아래 예시 참고|
 
-#### 📘 `/point/{id}/histories` 응답 예시
+####  `/point/{id}/histories` 응답 예시
 ```json
 [
   {
